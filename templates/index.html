@@ -3,113 +3,243 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EsToDoList</title>
+    <title>Aura Blue Task Flow | Gerenciador</title>
+    <!-- Chosen Palette: Deep Indigo (#4f46e5) and White/Light Gray -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'primary': '#3b82f6', // Cor azul padrão do Tailwind (blue-500)
-                    }
-                }
+    <!-- ************************************ -->
+    <!-- SEÇÃO 1: ESTILOS CSS -->
+    <!-- ************************************ -->
+    <style>
+        :root {
+            --color-primary: #4f46e5; /* Indigo-600 */
+            --color-bg: #f8fafc;      /* Slate-50 */
+            --color-sidebar: #ffffff;
+            --color-high: #ef4444;    /* Red-500 */
+            --color-medium: #f59e0b;  /* Amber-500 */
+            --color-low: #3b82f6;     /* Blue-500 */
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--color-bg);
+            min-height: 100vh;
+            color: #1f2937;
+            overflow-x: hidden;
+        }
+        
+        /* Sidebar Styling */
+        .sidebar {
+            width: 240px;
+            z-index: 20;
+            background-color: var(--color-sidebar);
+            box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
+        }
+        @media (min-width: 1024px) {
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                height: 100vh;
+            }
+            .main-content {
+                margin-left: 240px;
             }
         }
-    </script>
+        
+        /* Task Card specific styles */
+        .task-item {
+            border-radius: 12px;
+            border-left: 5px solid #e2e8f0; 
+            transition: all 0.3s ease-in-out;
+            background-color: white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); 
+        }
+
+        /* Border colors based on priority (Indigo for quick add default) */
+        .task-item[data-priority="high"] { border-left-color: var(--color-high); }
+        .task-item[data-priority="medium"] { border-left-color: var(--color-medium); }
+        .task-item[data-priority="low"] { border-left-color: var(--color-low); }
+        
+        .task-item.completed {
+            border-left-color: #94a3b8 !important; /* Slate-400 */
+            opacity: 0.85;
+            background-color: #f1f5f9; /* Slate-100 */
+        }
+
+        .task-item:hover:not(.completed) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(79, 70, 229, 0.15); /* Sombra Indígo */
+        }
+        
+        /* Modal Backdrop */
+        .modal-overlay {
+            background-color: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(3px);
+            z-index: 50;
+        }
+        
+        /* Filter button base style */
+        .filter-group-btn {
+            transition: background-color 0.2s, color 0.2s;
+            border-radius: 6px;
+        }
+        .filter-group-btn.active {
+            background-color: var(--color-primary);
+            color: white;
+            font-weight: 600;
+        }
+    </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
+<body class="lg:flex"> 
 
-    <header class="bg-white shadow-md">
-        <div class="flex justify-between items-center px-4 py-3 border-b border-gray-200">
-            <button class="p-2 border border-gray-300 rounded hover:bg-gray-100 transition duration-150">
-                <i class="fas fa-bars text-gray-700"></i> Menu
-            </button>
-
-            <h1 class="text-2xl font-semibold text-gray-800">Tarefas</h1>
-
-            <button class="bg-primary hover:bg-blue-600 text-white font-medium py-2 px-4 rounded transition duration-150 flex items-center space-x-1">
-                <i class="fas fa-plus"></i>
-                <span>Nova Tarefa</span>
-            </button>
-        </div>
-    </header>
-
-    <main class="container mx-auto max-w-xl p-4 sm:p-6 lg:p-8">
-
-        <div class="flex mb-8 mt-4 shadow-lg rounded-lg overflow-hidden"> 
-            <input 
-                type="text" 
-                placeholder="Escreva sua nova tarefa aqui..." 
-                class="flex-1 p-4 text-gray-700 border-none focus:outline-none focus:ring-2 focus:ring-primary"
-                id="task-input"
-            >
-            <button 
-                class="bg-primary hover:bg-blue-600 text-white font-bold px-6 transition duration-200"
-                id="add-task-btn"
-            >
-                Adicionar
-            </button>
-        </div>
-
-        <div id="todo-list-container" class="space-y-4">
-            
-            <div class="flex items-center justify-between p-4 bg-white shadow-md rounded-lg border-l-4 border-yellow-500 transition duration-300 hover:shadow-lg">
-                <span class="text-lg text-gray-800" data-status="pending">
-                    Configurar o ambiente de desenvolvimento
-                </span>
-                
-                <div class="flex space-x-3">
-                    <button class="text-green-500 hover:text-green-700 p-1 rounded-full hover:bg-green-100 transition duration-150" title="Concluir Tarefa">
-                        <i class="fas fa-check text-xl"></i> 
-                    </button>
-                    
-                    <button class="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-100 transition duration-150" title="Excluir Tarefa">
-                        <i class="fas fa-trash text-xl"></i> 
-                    </button>
-                </div>
-            </div>
-
-            <div class="flex items-center justify-between p-4 bg-gray-100 shadow-sm rounded-lg border-l-4 border-green-500 opacity-80 transition duration-300">
-                <span class="text-lg text-gray-500 line-through" data-status="completed">
-                    Definir as cores principais do Tailwind
-                </span>
-                
-                <div class="flex space-x-3">
-                    <button class="text-blue-500 hover:text-blue-700 p-1 rounded-full hover:bg-blue-100 transition duration-150" title="Marcar como Pendente">
-                        <i class="fas fa-undo text-xl"></i> 
-                    </button>
-                    
-                    <button class="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-100 transition duration-150" title="Excluir Tarefa">
-                        <i class="fas fa-trash text-xl"></i> 
-                    </button>
-                </div>
-            </div>
-
-            <div class="flex items-center justify-between p-4 bg-white shadow-md rounded-lg border-l-4 border-blue-500 transition duration-300 hover:shadow-lg">
-                <span class="text-lg text-gray-800" data-status="pending">
-                    Implementar a lógica de adição de tarefas (JavaScript)
-                </span>
-                
-                <div class="flex space-x-3">
-                    <button class="text-green-500 hover:text-green-700 p-1 rounded-full hover:bg-green-100 transition duration-150" title="Concluir Tarefa">
-                        <i class="fas fa-check text-xl"></i> 
-                    </button>
-                    <button class="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-100 transition duration-150" title="Excluir Tarefa">
-                        <i class="fas fa-trash text-xl"></i> 
-                    </button>
-                </div>
-            </div>
-
-        </div> </main>
+    <!-- ************************************ -->
+    <!-- SEÇÃO 2: ESTRUTURA HTML -->
+    <!-- ************************************ -->
     
-    <script>
-        // Aqui você adicionará o código JavaScript para:
-        // 1. Lidar com o clique do botão "Adicionar" (add-task-btn)
-        // 2. Criar novos elementos de tarefa (com a mesma estrutura HTML)
-        // 3. Gerenciar os cliques nos botões "Concluir" e "Deletar"
-    </script>
+    <!-- Sidebar Fixo (Menu de Navegação e Filtros) -->
+    <div id="sidebar" class="sidebar fixed h-full transition-transform transform -translate-x-full lg:relative lg:translate-x-0 p-5 flex flex-col">
+        <button id="close-menu" class="lg:hidden absolute top-4 right-4 text-gray-500 hover:text-gray-900 text-2xl">✕</button>
+        
+        <h1 class="text-2xl font-extrabold text-gray-900 tracking-tight mb-8 pb-4 border-b border-gray-200">Aura Task Flow</h1>
+        
+        <!-- Progresso e Status -->
+        <section class="mb-8 p-4 bg-indigo-50 rounded-lg shadow-sm border border-indigo-200">
+            <h2 class="text-base font-semibold text-gray-700 mb-3">Progresso Geral</h2>
+            <div class="mb-3">
+                <p id="progress-summary" class="text-sm font-medium text-gray-700 mb-1">0% Concluído</p>
+                <div class="w-full bg-indigo-200 rounded-full h-2">
+                    <!-- Preenchimento da barra de progresso -->
+                    <div id="progress-bar-fill" class="h-2 rounded-full" style="width: 0%; background-color: var(--color-primary);"></div>
+                </div>
+            </div>
+            <p id="progress-detail" class="text-xs text-gray-500">0 pendente(s) de 0 total.</p>
+        </section>
 
+        <!-- Filtros de Status -->
+        <section>
+            <h2 class="text-sm font-semibold uppercase text-gray-500 mb-3">Status</h2>
+            <div id="status-filters" class="flex flex-col gap-1 mb-6">
+                <button onclick="filterByStatus('all')" class="filter-group-btn text-left px-3 py-2 font-medium text-gray-700 hover:bg-indigo-100 active" data-filter-status="all">Todas as Tarefas</button>
+                <button onclick="filterByStatus('pending')" class="filter-group-btn text-left px-3 py-2 font-medium text-gray-700 hover:bg-indigo-100" data-filter-status="pending">Pendentes</button>
+                <button onclick="filterByStatus('completed')" class="filter-group-btn text-left px-3 py-2 font-medium text-gray-700 hover:bg-indigo-100" data-filter-status="completed">Concluídas</button>
+            </div>
+        </section>
+
+        <!-- Filtros de Categoria -->
+        <section class="flex-grow">
+            <h2 class="text-sm font-semibold uppercase text-gray-500 mb-3">Categorias</h2>
+            <div id="category-filters" class="flex flex-col gap-1">
+                <button onclick="filterByCategory('all')" class="category-filter-btn filter-group-btn text-left px-3 py-2 font-medium text-gray-700 hover:bg-indigo-100 active" data-filter-category="all">Todas</button>
+                <button onclick="filterByCategory('Pessoal')" class="category-filter-btn filter-group-btn text-left px-3 py-2 font-medium text-gray-700 hover:bg-indigo-100" data-filter-category="Pessoal">Pessoal</button>
+                <button onclick="filterByCategory('Trabalho')" class="category-filter-btn filter-group-btn text-left px-3 py-2 font-medium text-gray-700 hover:bg-indigo-100" data-filter-category="Trabalho">Trabalho</button>
+                <button onclick="filterByCategory('Estudo')" class="category-filter-btn filter-group-btn text-left px-3 py-2 font-medium text-gray-700 hover:bg-indigo-100" data-filter-category="Estudo">Estudo</button>
+                <button onclick="filterByCategory('Saúde')" class="category-filter-btn filter-group-btn text-left px-3 py-2 font-medium text-gray-700 hover:bg-indigo-100" data-filter-category="Saúde">Saúde</button>
+            </div>
+        </section>
+        
+        <!-- Rodapé da Sidebar -->
+        <div class="mt-auto pt-4 border-t border-gray-200">
+             <p class="text-xs text-gray-400">Aura Blue Task Flow v1.0</p>
+        </div>
+    </div>
+
+    <!-- Main Content (Lista de Tarefas) -->
+    <div class="main-content flex-grow p-4 md:p-8 lg:py-8">
+        
+        <!-- Cabeçalho Mobile e Barra de Pesquisa/Adição -->
+        <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+            <!-- Botão de Menu Mobile -->
+            <button id="menu-toggle" class="p-2 rounded-lg bg-indigo-600 text-white lg:hidden shadow-lg hover:bg-indigo-700">
+                ☰ Menu
+            </button>
+            
+            <h2 class="text-3xl font-bold text-gray-800 tracking-tight hidden lg:block">Gerenciador de Tarefas</h2>
+            
+            <!-- Form de Pesquisa e Adição Rápida -->
+            <form id="task-input-form" class="flex w-full sm:max-w-md bg-white rounded-xl shadow-xl border border-gray-100 focus-within:ring-2 focus-within:ring-indigo-400 transition">
+                <input type="text" id="task-search-input" placeholder="Pesquisar ou Adicionar nova tarefa..." 
+                       oninput="updateSearchTerm(this.value)"
+                       class="flex-grow px-4 py-3 bg-transparent rounded-l-xl focus:outline-none text-gray-700 text-sm md:text-base" required>
+                <button type="submit" id="quick-add-btn" class="bg-indigo-600 text-white font-semibold px-4 py-3 rounded-r-xl hover:bg-indigo-700 transition duration-300 shadow-md flex items-center justify-center">
+                    + Adicionar
+                </button>
+            </form>
+        </header>
+
+        <!-- Título da Lista Baseado no Filtro -->
+        <h3 id="list-title" class="text-2xl font-bold mb-6 text-gray-800">Todas as Tarefas</h3>
+        
+        <ul id="task-list" class="space-y-4">
+            <!-- Tarefas serão injetadas aqui -->
+        </ul>
+        
+    </div>
+
+    <!-- Modal de Edição de Tarefas -->
+    <div id="task-modal" class="modal-overlay fixed inset-0 hidden items-center justify-center p-4" onclick="closeModal(event)">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 md:p-8 transform transition-all" onclick="event.stopPropagation()">
+            <h3 id="modal-title" class="text-2xl font-bold mb-6 text-gray-800">Editar Detalhes da Tarefa</h3>
+            
+            <form id="modal-form" class="space-y-4">
+                <input type="hidden" id="modal-task-id">
+                <input type="hidden" id="modal-task-completed">
+
+                <!-- Campo Título -->
+                <div>
+                    <label for="modal-title-input" class="block text-sm font-medium text-gray-500 mb-1">Título da Tarefa</label>
+                    <input type="text" id="modal-title-input" required 
+                           class="w-full px-4 py-2 border border-gray-300 bg-gray-50 text-gray-800 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+
+                <!-- Campo Prazo -->
+                <div>
+                    <label for="modal-due-date" class="block text-sm font-medium text-gray-500 mb-1">Prazo (Opcional)</label>
+                    <input type="date" id="modal-due-date" 
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-800 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                
+                <!-- Campo Prioridade e Categoria (Lado a Lado) -->
+                <div class="flex gap-4">
+                    <div class="w-1/2">
+                        <label for="modal-priority" class="block text-sm font-medium text-gray-500 mb-1">Prioridade</label>
+                        <select id="modal-priority" required 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-800 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            <option value="high">🔥 Alta</option>
+                            <option value="medium">⚠️ Média</option>
+                            <option value="low">⬇️ Baixa</option>
+                        </select>
+                    </div>
+                    <div class="w-1/2">
+                        <label for="modal-category" class="block text-sm font-medium text-gray-500 mb-1">Categoria</label>
+                        <select id="modal-category" required 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-800 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            <option value="Pessoal">Pessoal</option>
+                            <option value="Trabalho">Trabalho</option>
+                            <option value="Estudo">Estudo</option>
+                            <option value="Saúde">Saúde</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Botões de Ação -->
+                <div class="flex justify-end gap-3 pt-4">
+                    <button type="button" onclick="closeModal()" class="px-4 py-2 text-gray-600 bg-gray-200 rounded-lg hover:bg-gray-300 transition">
+                        Cancelar
+                    </button>
+                    <button type="submit" id="modal-submit-btn" class="px-4 py-2 text-white font-semibold rounded-lg transition bg-indigo-600 hover:bg-indigo-700 shadow-md">
+                        Salvar Alterações
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- ************************************ -->
+    <!-- SEÇÃO 3: LÓGICA JAVASCRIPT -->
+    <!-- ************************************ -->
+   
 </body>
 </html>
